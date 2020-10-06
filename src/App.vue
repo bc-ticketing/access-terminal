@@ -1,32 +1,57 @@
 <template>
-  <div id="app">
-    <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view />
+  <div class="app-container">
+    <md-content class="container">
+      <router-view />
+    </md-content>
   </div>
 </template>
 
+<script>
+// Material kit css
+import "vue-material/dist/vue-material.min.css";
+import "vue-material/dist/theme/default.css";
+import Vue from "vue";
+
+// Importing Modules from the material kit, these are global imports
+// For components only used in single views, import locally
+import VueMaterial from "vue-material";
+
+Vue.use(VueMaterial);
+
+export default {
+  name: "TerminalApp",
+};
+</script>
+
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ----------- Fonts ----------- */
+@import url("https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/icon?family=Material+Icons");
+
+.md-title {
   text-align: center;
-  color: #2c3e50;
 }
-
-#nav {
-  padding: 30px;
+.page-container {
+  min-height: 300px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(#000, 0.12);
 }
-
-#nav a {
-  font-weight: bold;
-  color: #2c3e50;
+.md-content {
+  padding: 16px;
 }
-
-#nav a.router-link-exact-active {
-  color: #42b983;
+.container {
+  width: 80%;
+  max-width: 1440px;
+  margin: auto;
+}
+.info-dialog {
+  display: flex;
+}
+.info-dialog-button {
+  padding: 17px 0 21px;
+}
+.dialog-text {
+  margin: 0 24px 10px;
 }
 </style>
