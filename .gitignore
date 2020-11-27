@@ -5,6 +5,7 @@ npm-debug.log
 yarn-error.log
 .babelrc
 .editorconfig
+.env
 
 # Editor directories and files
 .idea

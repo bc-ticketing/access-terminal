@@ -9,17 +9,17 @@ const routes = [
   {
     path: "/",
     name: "Connection",
-    component: Connection,
+    component: Connection
   },
   {
     path: "/terminal",
     name: "Terminal",
-    component: Terminal,
-  },
+    component: Terminal
+  }
 ];
 
 const router = new VueRouter({
-  routes,
+  routes
 });
 
 export default router;
