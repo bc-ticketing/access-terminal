@@ -36,7 +36,7 @@ export default new Vuex.Store({
       state.areaFrom = payload;
     },
     SET_AREA_TO(state, payload) {
-      console.log("SET_AREA_To", payload);
+      console.log("SET_AREA_TO", payload);
       state.areaTo = payload;
     },
     SET_CODE(state, payload) {

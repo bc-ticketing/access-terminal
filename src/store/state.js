@@ -6,6 +6,5 @@ let state = {
   areaFrom: "",
   areaTo: "",
   terminalId: "",
-  code: "",
 };
 export default state;
