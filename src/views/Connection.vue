@@ -52,11 +52,11 @@
                 name="areaFrom"
                 v-model="areaFrom"
               >
-                <md-option value="ENTRANCE">Entrance Area</md-option>
-                <md-option value="GENERAL">General Area</md-option>
-                <md-option value="SEATINGAREA1">Seating Area 1</md-option>
-                <md-option value="SEATINGAREA2">Seating Area 2</md-option>
-                <md-option value="AREA_VIPAREA">VIP Area</md-option>
+                <md-option v-if="areaTo !== `ENTRANCE`" value="ENTRANCE">Entrance Area</md-option>
+                <md-option v-if="areaTo !== `GENERAL`" value="GENERAL">General Area</md-option>
+                <md-option v-if="areaTo !== `SEATINGAREA1`" value="SEATINGAREA1">Seating Area 1</md-option>
+                <md-option v-if="areaTo !== `SEATINGAREA2`" value="SEATINGAREA2">Seating Area 2</md-option>
+                <md-option v-if="areaTo !== `AREA_VIPAREA`" value="AREA_VIPAREA">VIP Area</md-option>
               </md-select>
             </md-field>
           </div>
@@ -69,11 +69,11 @@
                 name="areaTo"
                 v-model="areaTo"
               >
-                <md-option value="ENTRANCE">Entrance Area</md-option>
-                <md-option value="GENERAL">General Area</md-option>
-                <md-option value="SEATINGAREA1">Seating Area 1</md-option>
-                <md-option value="SEATINGAREA2">Seating Area 2</md-option>
-                <md-option value="AREA_VIPAREA">VIP Area</md-option>
+                <md-option v-if="areaFrom !== `ENTRANCE`" value="ENTRANCE">Entrance Area</md-option>
+                <md-option v-if="areaFrom !== `GENERAL`" value="GENERAL">General Area</md-option>
+                <md-option v-if="areaFrom !== `SEATINGAREA1`" value="SEATINGAREA1">Seating Area 1</md-option>
+                <md-option v-if="areaFrom !== `SEATINGAREA2`" value="SEATINGAREA2">Seating Area 2</md-option>
+                <md-option v-if="areaFrom !== `AREA_VIPAREA`" value="AREA_VIPAREA">VIP Area</md-option>
               </md-select>
             </md-field>
           </div>
@@ -97,9 +97,6 @@
 
     <div class="go-to-terminal">
       <md-button class="md-primary" @click="goToTerminal()">Terminal</md-button>
-    </div>
-    <div>
-      <h4>{{ registerRequestURL }}</h4>
     </div>
   </div>
 </template>
@@ -126,17 +123,23 @@ export default {
 
     baseURL: "",
     registerSecret: "",
-    areaFrom: "ENTRANCE",
-    areaTo: "GENERAL",
+    areaFrom: "",
+    areaTo: "",
 
     eventAddress: "",
     tickets: [],
     data: null
   }),
   computed: {
+    formatBaseURL() {
+      if (this.baseURL.slice(-1) === "/") {
+        return this.baseURL.slice(0, -1);
+      }
+      return this.baseURL;
+    },
     registerRequestURL() {
       return (
-        this.baseURL +
+        this.formatBaseURL +
         REGISTER_MAPPING +
         "?" +
         QUERY_SECRET +
@@ -180,7 +183,7 @@ export default {
       if (!this.formValid) {
         this.showErrorStatus();
       } else {
-        this.$store.dispatch("setBaseURL", this.baseURL);
+        this.$store.dispatch("setBaseURL", this.formatBaseURL);
         this.$store.dispatch("setAreaFrom", this.areaFrom);
         this.$store.dispatch("setAreaTo", this.areaTo);
         const response = await this.registerRequest();
