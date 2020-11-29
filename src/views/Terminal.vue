@@ -7,7 +7,6 @@
       <vue-qrcode
         class="qr-scanning-code"
         :value="qrValue"
-        :quality="quality"
       />
     </div>
 
@@ -15,16 +14,16 @@
       class="status-container"
       v-if="terminalStatus == `GRANTED`"
       style="background-color: #118c19;"
-      @click="handleEntry()"
+      @click="handleGrantedClick()"
     >
-      <div class="status-display-text-big">5</div>
+      <div class="status-display-text-big">{{ nrTickets }}</div>
     </div>
 
     <div
       class="status-container"
       v-if="terminalStatus == `DENIED`"
       style="background-color: #bd0808;"
-      @click="getNewCode()"
+      @click="handleDeniedClick()"
     >
       <div class="status-display-text-message">The signature was invalid!</div>
     </div>
@@ -43,7 +42,8 @@ import {
   NEW_CODE_MAPPING,
   STATUS_MAPPING,
   STATUS_REQUEST_INTERVAL,
-  QUERY_TERMINAL_ID
+  QUERY_TERMINAL_ID,
+  NR_TICKETS_MAPPING
 } from "../util/constants";
 import axios from "axios";
 
@@ -54,10 +54,9 @@ export default {
   },
   data: () => ({
     terminalStatus: "PENDING",
+    status: "",
     nrTickets: 0,
     code: "",
-
-    quality: 1
   }),
   computed: {
     terminalId() {
@@ -69,7 +68,7 @@ export default {
         randId: this.code
       });
     },
-    getStatusRequest() {
+    getStatusRequestURL() {
       return (
         this.$store.state.baseURL +
         STATUS_MAPPING +
@@ -86,31 +85,27 @@ export default {
         QUERY_TERMINAL_ID +
         this.terminalId
       );
-    }
+    },
+    getTicketAmountRequestURL() {
+      return (
+        this.$store.state.baseURL +
+        NR_TICKETS_MAPPING +
+        "?" +
+        QUERY_TERMINAL_ID +
+        this.terminalId
+      )
+    },
   },
   methods: {
-    runStatusInterval() {
-      if (this.timer !== null) {
-        return;
-      }
-      this.timer = setInterval(async () => {
-        console.log("fetching status");
-        let status = await this.getStatus();
-        console.log(status);
-      }, STATUS_REQUEST_INTERVAL);
+    showDenied() {
+      this.terminalStatus = "DENIED";
     },
-    stopStatusInterval() {
-      clearInterval(this.timer);
-      this.timer = null;
+    showGranted(amount) {
+      this.terminalStatus = "GRANTED";
+      this.nrTickets = amount;
     },
-    /**
-     * decrements the number of tickets allowed to enter
-     */
-    handleEntry() {
-      if (this.nrTickets == 0) {
-        this.getNewCode();
-        this.status = "PENDING";
-      }
+    showQR() {
+      this.terminalStatus = "PENDING";
     },
     toConnectionView() {
       this.$router.push({
@@ -118,26 +113,87 @@ export default {
       });
     },
     async newCodeRequest() {
-      console.log("executing newCodeRequest");
-      const codeResponse = await axios.post(this.getNewCodeRequestURL);
-      console.log(codeResponse);
+      const codeResponse = await this.getNewCodeRequest();
       this.code = codeResponse.data;
-      console.log(this.code);
-      this.setStatus("PENDING");
-      this.statusInterval();
-      // call interval method fetching status here
+      console.log("fetched following code", this.code);
     },
     async getNewCodeRequest() {
       return await axios.post(this.getNewCodeRequestURL);
     },
-    statusInterval() {
-      // todo: fetch status in interval and upon GRANTED or DENIED
-      // -> stop interval and change status
-      // -> if GRANTED -> request number of tickets and display
-    }
+    async executeStatusRequest() {
+      return await axios.get(this.getStatusRequestURL);
+    },
+    async executeTicketAmountRequest() {
+      return await axios.get(this.getTicketAmountRequestURL);
+    },
+    async processStatus() {
+      console.log("processing status");
+      if (this.status === "DENIED") {
+        this.showDenied();
+      } else if (this.status === "GRANTED") {
+        let amount = await this.fetchTicketAmount();
+        this.showGranted(amount);
+      }
+    },
+    /**
+     * Runs pings in an interval and stops as soon as the status has changed.
+     */
+    async startPinningStatusAndProcessWhenChanged() {
+      this.$on("statuschanged", () => {
+        clearInterval(pingInterval);
+        this.processStatus();
+      })
+      let pingInterval = setInterval(this.pingForStatus, STATUS_REQUEST_INTERVAL);
+    },
+    /**
+     * Fetches the status from the host-backend once
+     */
+    async pingForStatus() {
+      let status = await this.fetchStatus();
+      console.log("pingForStatus", status);
+      if (this.status != status) {
+        this.$emit("statuschanged");
+        console.log("statuschanged emitted");
+      }
+    },
+    async fetchStatus() {
+      let response = await this.executeStatusRequest();
+      return response.data;
+    },
+    async fetchTicketAmount() {
+      let response = await this.executeTicketAmountRequest();
+      return response.data;
+    },
+
+    // Handling Denied and Granted States
+
+    async handleDeniedClick() {
+      await this.newCodeRequest();
+      this.status = await this.fetchStatus();
+      console.log("should be PENDING", this.status);
+      this.startPinningStatusAndProcessWhenChanged();
+    },
+    async handleGrantedClick() {
+      console.log("handleGrantedClick executing");
+      // one person may enter per click
+      let remaining = this.nrTickets - 1;
+      if (remaining === 0) {
+        await this.newCodeRequest();
+        this.status = await this.fetchStatus();
+        console.log("should be PENDING", this.status);
+        this.startPinningStatusAndProcessWhenChanged();
+      } else {
+        this.nrTickets = remaining;
+      }
+    },
   },
   async created() {
-    this.newCodeRequest();
+    await this.newCodeRequest();
+    this.status = await this.fetchStatus();
+    console.log("status after first fetchStatus - should be PENDING", this.status);
+
+    // executing interval pinging the backend for a status change
+    this.startPinningStatusAndProcessWhenChanged();
   }
 };
 </script>
