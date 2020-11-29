@@ -5,11 +5,11 @@ export const NETWORKS = {
   "4": "Rinkeby test network",
   "42": "Kovan test network",
   "4447": "Truffle Develop Network",
-  "5777": "Ganache Blockchain"
+  "5777": "Ganache Blockchain",
 };
 
 export const TIMEOUT = 2000;
-export const STATUS_REQUEST_INTERVAL = 100;
+export const STATUS_REQUEST_INTERVAL = 500;
 
 export const REGISTER_MAPPING = "/registerTerminal";
 export const NEW_CODE_MAPPING = "/NewSecretCode";
