@@ -19,11 +19,7 @@ import VueMaterial from "vue-material";
 Vue.use(VueMaterial);
 
 export default {
-  name: "TerminalApp",
-  async created() {
-    await this.$store.dispatch("registerWeb3");
-    // await this.$store.dispatch("setEventFactory");
-  }
+  name: "TerminalApp"
 };
 </script>
 

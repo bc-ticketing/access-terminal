@@ -1,24 +1,12 @@
 import Vue from "vue";
 import Vuex from "vuex";
 import state from "./state";
-import { EVENT_MINTABLE_AFTERMARKET_PRESALE_ABI } from "../util/EventMintableAftermarketPresale";
 
 Vue.use(Vuex);
-var Web3 = require("web3");
-
-// var Contract = require("web3-eth-contract");
 
 export default new Vuex.Store({
   state,
   mutations: {
-    REGISTER_WEB3(state, payload) {
-      console.log("REGISTER_WEB3", payload);
-      state.web3 = payload;
-    },
-    SET_EVENT_CONTRACT(state, payload) {
-      console.log("SET_EVENT_CONTRACT", payload);
-      state.eventContract = payload;
-    },
     SET_TERMINAL_ID(state, payload) {
       console.log("SET_TERMINAL_ID", payload);
       state.terminalId = payload;
@@ -55,24 +43,6 @@ export default new Vuex.Store({
     },
     setCode({ commit }, code) {
       commit("SET_CODE", code);
-    },
-    // Registers this terminal on the host-backend.
-    registerWeb3({ commit }) {
-      console.log("registerWeb3 action executed");
-      const networkAddress =
-        "https://kovan.infura.io/v3/" + process.env.VUE_APP_INFURA_ID;
-      const provider = new Web3.providers.HttpProvider(networkAddress);
-      const web3 = new Web3(provider);
-      commit("REGISTER_WEB3", web3);
-    },
-    // Creates the Event contract instance.
-    async setEventContract({ commit }, address) {
-      console.log(state.web3);
-      let eventContract = new state.web3.eth.Contract(
-        EVENT_MINTABLE_AFTERMARKET_PRESALE_ABI,
-        address
-      );
-      commit("SET_EVENT_CONTRACT", eventContract);
     },
   },
 });
