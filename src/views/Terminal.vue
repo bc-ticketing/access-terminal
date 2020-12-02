@@ -1,6 +1,6 @@
 <template>
   <div class="terminal-container">
-    <div class="qr-scanning-container" v-if="terminalStatus == `PENDING`">
+    <div class="qr-scanning-container" v-if="terminalStatus == `PENDING` && !error">
       <h1 class="qr-scanning-instruction">
         Scan this code and follow the instructions in the app!
       </h1>
@@ -26,6 +26,12 @@
       @click="handleDeniedClick()"
     >
       <div class="status-display-text-message">The signature was invalid!</div>
+    </div>
+
+    <div v-if="error">
+      <h1 class="qr-scanning-instruction">
+        {{ errorMessage}}
+      </h1>
     </div>
 
     <div class="change-connection">
@@ -57,6 +63,9 @@ export default {
     status: "",
     nrTickets: 0,
     code: "",
+
+    error: false,
+    errorMessage: "",
   }),
   computed: {
     terminalId() {
@@ -97,6 +106,10 @@ export default {
     },
   },
   methods: {
+    startPingInterval() {
+      let pingInterval = setInterval(this.handleStatus, STATUS_REQUEST_INTERVAL);
+      console.log("startet pingInterval", pingInterval);
+    },
     showDenied() {
       this.terminalStatus = "DENIED";
     },
@@ -107,15 +120,24 @@ export default {
     showQR() {
       this.terminalStatus = "PENDING";
     },
+    showError() {
+      this.error = true;
+      this.errorMessage = "Something went wrong. Please check your connection!"
+    },
     toConnectionView() {
       this.$router.push({
         name: `Connection`
       });
     },
     async newCodeRequest() {
-      const codeResponse = await this.getNewCodeRequest();
-      this.code = codeResponse.data;
-      console.log("fetched following code", this.code);
+      try {
+        console.log("executing new code request");
+        const codeResponse = await this.getNewCodeRequest();
+        this.code = codeResponse.data;
+        console.log("fetched following code", this.code);
+      } catch(e) {
+        this.showError();
+      }
     },
     async getNewCodeRequest() {
       return await axios.post(this.getNewCodeRequestURL);
@@ -126,62 +148,48 @@ export default {
     async executeTicketAmountRequest() {
       return await axios.get(this.getTicketAmountRequestURL);
     },
-    async processStatus() {
-      console.log("processing status");
-      if (this.status === "DENIED") {
-        this.showDenied();
-      } else if (this.status === "GRANTED") {
-        let amount = await this.fetchTicketAmount();
-        this.showGranted(amount);
-      }
-    },
-    /**
-     * Runs pings in an interval and stops as soon as the status has changed.
-     */
-    async startPinningStatusAndProcessWhenChanged() {
-      this.$on("statuschanged", () => {
-        clearInterval(pingInterval);
-        this.processStatus();
-      })
-      let pingInterval = setInterval(this.pingForStatus, STATUS_REQUEST_INTERVAL);
-    },
-    /**
-     * Fetches the status from the host-backend once
-     */
-    async pingForStatus() {
+    async handleStatus() {
       let status = await this.fetchStatus();
-      console.log("pingForStatus", status);
-      if (this.status != status) {
-        this.$emit("statuschanged");
-        console.log("statuschanged emitted");
+      console.log("handleStatus", status);
+      if (status == "PENDING" && !this.alreadyHandling) {
+        this.showQR();
+        return;
+      } else if (status == "GRANTED" && !this.alreadyHandlingGranted) {
+        this.handleGrantedStatus();
+        return;
+      } else if (status == "DENIED" && !this.alreadyHandlingDenied) {
+        this.showDenied();
       }
     },
+    async handleGrantedStatus() {
+      if (!this.alreadyHandlingGranted) {
+        this.alreadyHandlingGranted = true;
+        let ticketAmount =  await this.fetchTicketAmount();
+        this.showGranted(ticketAmount);
+      }
+    },
+
     async fetchStatus() {
-      let response = await this.executeStatusRequest();
-      return response.data;
+      try {
+        let response = await this.executeStatusRequest();
+        return response.data;
+      } catch(e) {
+        this.showError();
+      }
     },
     async fetchTicketAmount() {
       let response = await this.executeTicketAmountRequest();
       return response.data;
     },
-
-    // Handling Denied and Granted States
-
     async handleDeniedClick() {
       await this.newCodeRequest();
-      this.status = await this.fetchStatus();
-      console.log("should be PENDING", this.status);
-      this.startPinningStatusAndProcessWhenChanged();
     },
     async handleGrantedClick() {
-      console.log("handleGrantedClick executing");
-      // one person may enter per click
       let remaining = this.nrTickets - 1;
       if (remaining === 0) {
         await this.newCodeRequest();
-        this.status = await this.fetchStatus();
-        console.log("should be PENDING", this.status);
-        this.startPinningStatusAndProcessWhenChanged();
+        this.showQR();
+        this.alreadyHandlingGranted = false;
       } else {
         this.nrTickets = remaining;
       }
@@ -191,9 +199,7 @@ export default {
     await this.newCodeRequest();
     this.status = await this.fetchStatus();
     console.log("status after first fetchStatus - should be PENDING", this.status);
-
-    // executing interval pinging the backend for a status change
-    this.startPinningStatusAndProcessWhenChanged();
+    this.startPingInterval();
   }
 };
 </script>

@@ -15,10 +15,6 @@ export default new Vuex.Store({
       console.log("REGISTER_WEB3", payload);
       state.web3 = payload;
     },
-    // SET_EVENT_FACTORY(state, payload) {
-    //   console.log("SET_EVENT_FACTORY", payload);
-    //   state.eventFactory = payload;
-    // },
     SET_EVENT_CONTRACT(state, payload) {
       console.log("SET_EVENT_CONTRACT", payload);
       state.eventContract = payload;
@@ -69,13 +65,6 @@ export default new Vuex.Store({
       const web3 = new Web3(provider);
       commit("REGISTER_WEB3", web3);
     },
-    // setEventFactory({ commit }) {
-    //   let eventFactory = new state.web3.eth.Contract(
-    //     EVENT_FACTORY_ABI,
-    //     EVENT_FACTORY_ADDRESS
-    //   );
-    //   commit("SET_EVENT_FACTORY", eventFactory);
-    // },
     // Creates the Event contract instance.
     async setEventContract({ commit }, address) {
       console.log(state.web3);

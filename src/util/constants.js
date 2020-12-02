@@ -9,7 +9,7 @@ export const NETWORKS = {
 };
 
 export const TIMEOUT = 2000;
-export const STATUS_REQUEST_INTERVAL = 500;
+export const STATUS_REQUEST_INTERVAL = 1000;
 
 export const REGISTER_MAPPING = "/registerTerminal";
 export const NEW_CODE_MAPPING = "/NewSecretCode";
