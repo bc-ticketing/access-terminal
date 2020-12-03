@@ -1,4 +1,7 @@
 let state = {
-  socket: null,
+  baseURL: "",
+  areaFrom: "",
+  areaTo: "",
+  terminalId: "",
 };
 export default state;
