@@ -8,23 +8,6 @@
           </div>
         </md-card-header>
         <md-card-content style="padding: 20px">
-          <!-- <div class="event-address-container">
-            <md-field v-if="!contractSet">
-              <label for="event-address">Event Address</label>
-              <md-input
-                name="event-address"
-                id="event-address"
-                v-model="eventAddress"
-              >
-              </md-input>
-            </md-field>
-            <md-button class="md-primary" @click="setEvent"
-              >Set Event</md-button
-            >
-          </div>
-          <div>
-            <h4>Current Event: {{ eventAddress }}</h4>
-          </div> -->
           <div class="base-url-container">
             <md-field>
               <label for="base-url">Base URL</label>
@@ -56,7 +39,7 @@
                 <md-option v-if="areaTo !== `GENERAL`" value="GENERAL">General Area</md-option>
                 <md-option v-if="areaTo !== `SEATINGAREA1`" value="SEATINGAREA1">Seating Area 1</md-option>
                 <md-option v-if="areaTo !== `SEATINGAREA2`" value="SEATINGAREA2">Seating Area 2</md-option>
-                <md-option v-if="areaTo !== `AREA_VIPAREA`" value="AREA_VIPAREA">VIP Area</md-option>
+                <md-option v-if="areaTo !== `VIPAREA`" value="VIPAREA">VIP Area</md-option>
               </md-select>
             </md-field>
           </div>
@@ -73,7 +56,7 @@
                 <md-option v-if="areaFrom !== `GENERAL`" value="GENERAL">General Area</md-option>
                 <md-option v-if="areaFrom !== `SEATINGAREA1`" value="SEATINGAREA1">Seating Area 1</md-option>
                 <md-option v-if="areaFrom !== `SEATINGAREA2`" value="SEATINGAREA2">Seating Area 2</md-option>
-                <md-option v-if="areaFrom !== `AREA_VIPAREA`" value="AREA_VIPAREA">VIP Area</md-option>
+                <md-option v-if="areaFrom !== `VIPAREA`" value="VIPAREA">VIP Area</md-option>
               </md-select>
             </md-field>
           </div>
@@ -123,7 +106,7 @@ export default {
 
     baseURL: "",
     registerSecret: "",
-    areaFrom: "",
+    areaFrom: "ENTRANCE",
     areaTo: "",
 
     eventAddress: "",
@@ -160,9 +143,6 @@ export default {
         this.areaTo != null
       );
     },
-    contractSet() {
-      return this.$store.state.eventContract ? true : false;
-    }
   },
   methods: {
     showStatus(processBarMode, message) {

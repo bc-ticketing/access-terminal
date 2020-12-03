@@ -25,7 +25,7 @@
       style="background-color: #bd0808;"
       @click="handleDeniedClick()"
     >
-      <div class="status-display-text-message">The signature was invalid!</div>
+      <div class="status-display-text-message">{{ deniedMessage }}</div>
     </div>
 
     <div v-if="error">
@@ -49,9 +49,11 @@ import {
   STATUS_MAPPING,
   STATUS_REQUEST_INTERVAL,
   QUERY_TERMINAL_ID,
-  NR_TICKETS_MAPPING
+  NR_TICKETS_MAPPING,
+  DENIED_MESSAGE_MAPPING
 } from "../util/constants";
 import axios from "axios";
+import sleep from "await-sleep";
 
 export default {
   name: "Terminal",
@@ -63,6 +65,9 @@ export default {
     status: "",
     nrTickets: 0,
     code: "",
+    deniedMessage: "",
+    alreadyHandlingGranted: false,
+    alreadyHandlingDenied: false,
 
     error: false,
     errorMessage: "",
@@ -104,6 +109,15 @@ export default {
         this.terminalId
       )
     },
+    getDeniedMessageRequestURL() {
+      return (
+        this.$store.state.baseURL +
+        DENIED_MESSAGE_MAPPING +
+        "?" +
+        QUERY_TERMINAL_ID +
+        this.terminalId
+      )
+    }
   },
   methods: {
     startPingInterval() {
@@ -120,9 +134,11 @@ export default {
     showQR() {
       this.terminalStatus = "PENDING";
     },
-    showError() {
+    async showError() {
       this.error = true;
-      this.errorMessage = "Something went wrong. Please check your connection!"
+      this.errorMessage = "Something went wrong. Please check your connection!";
+      await sleep(3000);
+      this.error = false;
     },
     toConnectionView() {
       this.$router.push({
@@ -130,59 +146,72 @@ export default {
       });
     },
     async newCodeRequest() {
+      this.alreadyHandlingDenied = false;
+      this.alreadyHandlingGranted = false;
       try {
         console.log("executing new code request");
-        const codeResponse = await this.getNewCodeRequest();
-        this.code = codeResponse.data;
+        const response = await axios.post(this.getNewCodeRequestURL);
+        this.code = response.data;
         console.log("fetched following code", this.code);
       } catch(e) {
         this.showError();
       }
     },
-    async getNewCodeRequest() {
-      return await axios.post(this.getNewCodeRequestURL);
-    },
-    async executeStatusRequest() {
-      return await axios.get(this.getStatusRequestURL);
-    },
-    async executeTicketAmountRequest() {
-      return await axios.get(this.getTicketAmountRequestURL);
-    },
     async handleStatus() {
       let status = await this.fetchStatus();
-      console.log("handleStatus", status);
-      if (status == "PENDING" && !this.alreadyHandling) {
+      console.log("fetching status", status);
+      if (status == "PENDING") {
         this.showQR();
-        return;
       } else if (status == "GRANTED" && !this.alreadyHandlingGranted) {
         this.handleGrantedStatus();
-        return;
       } else if (status == "DENIED" && !this.alreadyHandlingDenied) {
-        this.showDenied();
+        this.handleDeniedStatus();
       }
     },
     async handleGrantedStatus() {
       if (!this.alreadyHandlingGranted) {
         this.alreadyHandlingGranted = true;
-        let ticketAmount =  await this.fetchTicketAmount();
-        this.showGranted(ticketAmount);
+        try {
+          let ticketAmount =  await this.fetchTicketAmount();
+          this.showGranted(ticketAmount);
+        } catch(e) {
+          this.showError();
+        }
+      }
+    },
+    async handleDeniedStatus() {
+      if (!this.alreadyHandlingDenied) {
+        this.alreadyHandlingDenied = true;
+        try {
+          this.deniedMessage = await this.fetchDeniedMessage();
+          console.log("denied message", this.deniedMessage);
+          await sleep(2000);
+          this.showDenied();
+        } catch (e) {
+          this.showError();
+        }
       }
     },
 
     async fetchStatus() {
       try {
-        let response = await this.executeStatusRequest();
+        let response = await axios.get(this.getStatusRequestURL);
         return response.data;
       } catch(e) {
         this.showError();
       }
     },
     async fetchTicketAmount() {
-      let response = await this.executeTicketAmountRequest();
+      let response = await axios.get(this.getTicketAmountRequestURL);
+      return response.data;
+    },
+    async fetchDeniedMessage() {
+      let response = await axios.get(this.getDeniedMessageRequestURL);
       return response.data;
     },
     async handleDeniedClick() {
       await this.newCodeRequest();
+      this.alreadyHandlingDenied = false;
     },
     async handleGrantedClick() {
       let remaining = this.nrTickets - 1;
@@ -198,7 +227,7 @@ export default {
   async created() {
     await this.newCodeRequest();
     this.status = await this.fetchStatus();
-    console.log("status after first fetchStatus - should be PENDING", this.status);
+    console.log(this.status);
     this.startPingInterval();
   }
 };
