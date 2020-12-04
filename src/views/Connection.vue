@@ -77,7 +77,6 @@
         {{ processMessage }}
       </p>
     </div>
-    <div>{{registerRequestURL}}</div>
     <div class="go-to-terminal">
       <md-button class="md-primary" @click="goToTerminal()">Terminal</md-button>
     </div>

@@ -149,10 +149,8 @@ export default {
       this.alreadyHandlingDenied = false;
       this.alreadyHandlingGranted = false;
       try {
-        console.log("executing new code request");
         const response = await axios.post(this.getNewCodeRequestURL);
         this.code = response.data;
-        console.log("fetched following code", this.code);
       } catch(e) {
         this.showError();
       }
@@ -184,7 +182,6 @@ export default {
         this.alreadyHandlingDenied = true;
         try {
           this.deniedMessage = await this.fetchDeniedMessage();
-          console.log("denied message", this.deniedMessage);
           await sleep(2000);
           this.showDenied();
         } catch (e) {
@@ -227,7 +224,6 @@ export default {
   async created() {
     await this.newCodeRequest();
     this.status = await this.fetchStatus();
-    console.log(this.status);
     this.startPingInterval();
   }
 };
@@ -281,6 +277,7 @@ export default {
 .status-display-text-message {
   text-align: center;
   height: 600px;
+  line-height: 3rem;
   margin-top: 300px;
   font-size: 50px;
 }
